@@ -79,6 +79,13 @@ export function formatearETA(duracionMinutos: number): string {
 }
 
 /**
+ * Formatea una duración en minutos a formato legible
+ */
+export function formatearDuracion(duracionMinutos: number): string {
+  return formatearETA(duracionMinutos);
+}
+
+/**
  * Verifica si una ubicación de espera ha expirado
  */
 export function haExpirado(fechaExpiracion: Date): boolean {
