@@ -1,0 +1,37 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "viajes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "chofer_id", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "viajes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "chofer_id", "order": "ASCENDING" },
+        { "fieldPath": "hora_inicio", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ubicaciones_espera_alumnos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "activo", "order": "ASCENDING" },
+        { "fieldPath": "creado_en", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "choferes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "estado_autorizacion", "order": "ASCENDING" },
+        { "fieldPath": "creado_en", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
