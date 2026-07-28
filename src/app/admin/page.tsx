@@ -43,14 +43,10 @@ export default function AdminDashboardPage() {
             const chofer = await ChoferService.obtenerChofer(choferId);
             if (!chofer) continue;
 
-            const usuario = await import('@/lib/services/auth.service').then(
-              (m) => m.AuthService.obtenerUsuario(choferId)
-            );
-
             combisMarcadores[choferId] = {
               viaje_id: viaje.id,
               chofer_id: choferId,
-              chofer_nombre: usuario?.nombre || 'Chofer',
+              chofer_nombre: (chofer as any).nombre || 'Chofer',
               placa: chofer.placa_vehiculo,
               posicion: { lat: ubicacion.lat, lng: ubicacion.lng },
               velocidad: ubicacion.velocidad,
