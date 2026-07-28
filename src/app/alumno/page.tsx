@@ -101,11 +101,7 @@ export default function AlumnoPage() {
         setUbicacionEsperaId(null);
         setMensaje('Ya no estás compartiendo tu ubicación');
       } else {
-        // Activar
-        const alumno = await import('@/lib/firestore').then((m) =>
-          m.getDoc(m.doc(m.firestore, 'alumnos', usuario.id))
-        );
-        const codigoEstudiante = alumno.data()?.codigo_estudiante || '';
+        const codigoEstudiante = (usuario as any)?.codigo_estudiante || usuario?.email?.split('@')[0] || '';
 
         const ubicacionId = await UbicacionEsperaService.activarEsperaAlumno(
           usuario.id,

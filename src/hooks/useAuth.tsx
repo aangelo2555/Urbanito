@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Usuario, LoginDTO, RegistroAlumnoDTO } from '@/types';
-import { AuthService } from '@/lib/services/auth.service.railway';
+import { AuthService } from '@/lib/services/auth.service';
 import { wsClient } from '@/lib/api/websocket';
 
 interface AuthContextType {
