@@ -20,7 +20,7 @@ db.on('connect', () => {
   console.log('PostgreSQL client connected');
 });
 
-db.on('error', (err) => {
+db.on('error', (err: Error) => {
   console.error('Unexpected PostgreSQL error:', err);
   process.exit(-1);
 });
