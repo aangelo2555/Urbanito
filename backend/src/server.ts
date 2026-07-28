@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import { db } from './config/database';
 import { redis } from './config/redis';
 import { setupWebSocket } from './websocket';
+import { autoMigrateDatabase } from './config/init-db';
 import routes from './routes';
 
 dotenv.config();
@@ -56,6 +57,7 @@ server.listen(PORT, async () => {
   try {
     await db.query('SELECT NOW()');
     console.log('✅ PostgreSQL connected');
+    await autoMigrateDatabase();
   } catch (error) {
     console.error('❌ PostgreSQL connection failed:', error);
   }

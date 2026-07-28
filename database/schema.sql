@@ -46,7 +46,7 @@ CREATE TABLE choferes (
 CREATE INDEX idx_choferes_usuario_id ON choferes(usuario_id);
 CREATE INDEX idx_choferes_estado ON choferes(estado_autorizacion);
 CREATE INDEX idx_choferes_dni ON choferes(dni);
-CREATE INDEX idx_choferes_placa ON choferes(placa_vehicular);
+CREATE INDEX idx_choferes_placa ON choferes(placa_vehiculo);
 
 -- Tabla: alumnos
 CREATE TABLE alumnos (
