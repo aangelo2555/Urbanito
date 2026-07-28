@@ -19,7 +19,7 @@ export default function AdminDashboardPage() {
   const [combiSeleccionada, setCombiSeleccionada] = useState<string | null>(null);
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState<string | null>(null);
   const [estadisticas, setEstadisticas] = useState({
-    combishActivas: 0,
+    combisActivas: 0,
     alumnosEsperando: 0,
     choferesAutorizados: 0,
   });
