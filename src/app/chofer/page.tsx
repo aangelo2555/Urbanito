@@ -67,6 +67,7 @@ export default function ChoferPage() {
               lng: posicion.lng,
               velocidad: velocidad ? velocidad * 3.6 : undefined, // m/s a km/h
               rumbo,
+              timestamp: Date.now(),
             });
           } catch (error: any) {
             console.error('Error al actualizar ubicación:', error);
