@@ -1,17 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import admin from 'firebase-admin';
+import jwt from 'jsonwebtoken';
 import { db } from '../config/database';
 
-// Inicializar Firebase Admin
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
+const JWT_SECRET = process.env.JWT_SECRET || 'urbanito_jwt_secret_key_2026';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -29,25 +20,25 @@ export async function requireAuth(
       return res.status(401).json({ error: 'No autorizado' });
     }
     
-    const idToken = authHeader.split('Bearer ')[1];
+    const token = authHeader.split('Bearer ')[1];
     
-    // Verificar token con Firebase
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    // Verificar token JWT
+    const decoded: any = jwt.verify(token, JWT_SECRET);
     
     // Obtener usuario de PostgreSQL
     const result = await db.query(
-      'SELECT * FROM usuarios WHERE firebase_uid = $1',
-      [decodedToken.uid]
+      'SELECT id, nombre, email, rol, estado, creado_en, actualizado_en FROM usuarios WHERE id = $1 AND estado = $2',
+      [decoded.id, 'activo']
     );
     
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Usuario no encontrado' });
+      return res.status(401).json({ error: 'Usuario no encontrado o inactivo' });
     }
     
     req.user = result.rows[0];
     next();
   } catch (error) {
-    res.status(401).json({ error: 'Token inválido' });
+    res.status(401).json({ error: 'Token inválido o expirado' });
   }
 }
 

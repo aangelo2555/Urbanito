@@ -9,9 +9,9 @@ INSERT INTO configuracion_sistema (clave, valor, descripcion) VALUES
 ('tiempo_inactividad_alerta_minutos', '10', 'Minutos de inactividad antes de alertar')
 ON CONFLICT (clave) DO NOTHING;
 
--- Insertar usuario administrador
-INSERT INTO usuarios (id, nombre, email, rol, estado, firebase_uid) VALUES
-('00000000-0000-0000-0000-000000000001', 'Administrador Urbanito', 'admin@urbanito.com', 'admin', 'activo', NULL)
+-- Insertar usuario administrador (Password por defecto: admin123)
+INSERT INTO usuarios (id, nombre, email, password_hash, rol, estado) VALUES
+('00000000-0000-0000-0000-000000000001', 'Administrador Urbanito', 'admin@urbanito.com', '$2a$10$r9G5QjH2P9wLwZ3nE1dG5.n6J1qA8R9uE0Y2W3X4Y5Z6A7B8C9D0E', 'admin', 'activo')
 ON CONFLICT (id) DO NOTHING;
 
 -- Insertar ruta predeterminada Buenavista - La Florida

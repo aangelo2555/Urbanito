@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255),
     firebase_uid VARCHAR(255) UNIQUE,
     rol rol_usuario NOT NULL,
     estado estado_usuario DEFAULT 'activo',

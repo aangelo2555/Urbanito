@@ -1,10 +1,8 @@
 /**
- * Servicio de autenticación usando Firebase Auth + Backend Railway
+ * Servicio de autenticación 100% nativo para Railway (PostgreSQL + JWT)
+ * Sin dependencias de Firebase
  */
 
-import { auth } from '@/lib/firebase/config';
-// @ts-ignore
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { apiClient } from '@/lib/api/client';
 import { Usuario, LoginDTO, RegistroAlumnoDTO } from '@/types';
 
@@ -12,91 +10,39 @@ export class AuthService {
   /**
    * Registrar un nuevo alumno
    */
-  static async registrarAlumno(data: RegistroAlumnoDTO): Promise<void> {
-    const firebaseAuth = auth;
-    if (!firebaseAuth) {
-      throw new Error('Firebase Auth no está configurado. Por favor configura las credenciales de Firebase.');
-    }
-    // 1. Crear usuario en Firebase Auth
-    const userCredential = await createUserWithEmailAndPassword(
-      firebaseAuth,
-      data.email,
-      data.password
+  static async registrarAlumno(data: RegistroAlumnoDTO): Promise<Usuario> {
+    const response = await apiClient.post<{ token: string; usuario: Usuario }>(
+      '/api/auth/register-alumno',
+      data
     );
 
-    const firebaseUid = userCredential.user.uid;
-    const idToken = await userCredential.user.getIdToken();
-
-    // 2. Guardar en localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('authToken', idToken);
+    if (typeof window !== 'undefined' && response.token) {
+      localStorage.setItem('authToken', response.token);
     }
 
-    try {
-      // 3. Crear usuario en PostgreSQL vía API
-      await apiClient.post('/api/auth/register-alumno', {
-        firebaseUid,
-        nombre: data.nombre,
-        email: data.email,
-        codigo_estudiante: data.codigo_estudiante,
-        telefono: data.telefono,
-      });
-    } catch (error) {
-      // Si falla, eliminar de Firebase Auth
-      await userCredential.user.delete();
-      throw error;
-    }
+    return response.usuario;
   }
 
   /**
-   * Iniciar sesión
+   * Iniciar sesión (email o código de estudiante)
    */
   static async login(credentials: LoginDTO): Promise<Usuario> {
-    const firebaseAuth = auth;
-    if (!firebaseAuth) {
-      throw new Error('Firebase Auth no está configurado. Por favor configura las credenciales de Firebase.');
-    }
-    // 1. Autenticar con Firebase
-    let email = credentials.email_o_codigo;
-
-    // Si es código de estudiante, obtener email del backend
-    if (/^\d{6,8}$/.test(credentials.email_o_codigo)) {
-      const response = await apiClient.post<{ email: string }>(
-        '/api/auth/email-by-codigo',
-        { codigo_estudiante: credentials.email_o_codigo }
-      );
-      email = response.email;
-    }
-
-    const userCredential = await signInWithEmailAndPassword(
-      firebaseAuth,
-      email,
-      credentials.password
+    const response = await apiClient.post<{ token: string; usuario: Usuario }>(
+      '/api/auth/login',
+      credentials
     );
 
-    const idToken = await userCredential.user.getIdToken();
-
-    // 2. Guardar token
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('authToken', idToken);
+    if (typeof window !== 'undefined' && response.token) {
+      localStorage.setItem('authToken', response.token);
     }
 
-    // 3. Obtener datos del usuario desde PostgreSQL
-    const usuario = await apiClient.post<Usuario>('/api/auth/verify', {
-      idToken,
-    });
-
-    return usuario;
+    return response.usuario;
   }
 
   /**
    * Cerrar sesión
    */
   static async logout(): Promise<void> {
-    const firebaseAuth = auth;
-    if (firebaseAuth) {
-      await firebaseSignOut(firebaseAuth);
-    }
     if (typeof window !== 'undefined') {
       localStorage.removeItem('authToken');
     }
@@ -106,66 +52,36 @@ export class AuthService {
    * Obtener usuario actual
    */
   static async obtenerUsuarioActual(): Promise<Usuario | null> {
-    const firebaseAuth = auth;
-    if (!firebaseAuth) return null;
-    return new Promise((resolve) => {
-      const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser: any) => {
-        unsubscribe();
-        
-        if (firebaseUser) {
-          try {
-            const idToken = await firebaseUser.getIdToken();
-            
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('authToken', idToken);
-            }
+    if (typeof window === 'undefined') return null;
+    const token = localStorage.getItem('authToken');
+    if (!token) return null;
 
-            const usuario = await apiClient.post<Usuario>('/api/auth/verify', {
-              idToken,
-            });
-            
-            resolve(usuario);
-          } catch (error) {
-            console.error('Error obteniendo usuario:', error);
-            resolve(null);
-          }
-        } else {
-          resolve(null);
-        }
-      });
-    });
+    try {
+      const response = await apiClient.get<{ usuario: Usuario }>('/api/auth/me');
+      return response.usuario;
+    } catch (error) {
+      console.error('Error obteniendo usuario actual:', error);
+      localStorage.removeItem('authToken');
+      return null;
+    }
   }
 
   /**
    * Observar cambios en la autenticación
    */
   static onAuthChange(callback: (usuario: Usuario | null) => void): () => void {
-    const firebaseAuth = auth;
-    if (!firebaseAuth) {
-      callback(null);
-      return () => {};
-    }
-    return onAuthStateChanged(firebaseAuth, async (firebaseUser: any) => {
-      if (firebaseUser) {
-        try {
-          const idToken = await firebaseUser.getIdToken();
-          
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('authToken', idToken);
-          }
+    let active = true;
 
-          const usuario = await apiClient.post<Usuario>('/api/auth/verify', {
-            idToken,
-          });
-          
-          callback(usuario);
-        } catch (error) {
-          console.error('Error en auth change:', error);
-          callback(null);
-        }
-      } else {
-        callback(null);
-      }
-    });
+    this.obtenerUsuarioActual()
+      .then((user) => {
+        if (active) callback(user);
+      })
+      .catch(() => {
+        if (active) callback(null);
+      });
+
+    return () => {
+      active = false;
+    };
   }
 }
