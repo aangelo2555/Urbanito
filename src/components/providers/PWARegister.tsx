@@ -9,7 +9,7 @@ export function PWARegister() {
         navigator.serviceWorker
           .register('/sw.js')
           .then((registration) => {
-            console.log('PWA Service Worker registrado con éxito:', registration.scope);
+            registration.update();
           })
           .catch((error) => {
             console.error('Error al registrar Service Worker:', error);

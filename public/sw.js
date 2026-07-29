@@ -1,16 +1,6 @@
-const CACHE_NAME = 'urbanito-pwa-v1';
-const urlsToCache = [
-  '/',
-  '/manifest.json',
-  '/favicon.ico',
-];
+const CACHE_NAME = 'urbanito-pwa-v2';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    })
-  );
   self.skipWaiting();
 });
 
@@ -19,9 +9,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+          return caches.delete(cacheName);
         })
       );
     })
@@ -30,6 +18,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Network first strategy para asegurar actualización inmediata de código JS/HTML
   if (
     event.request.url.includes('/api/') ||
     event.request.url.startsWith('ws:') ||
@@ -39,8 +28,6 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
