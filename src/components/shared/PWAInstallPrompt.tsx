@@ -7,11 +7,10 @@ export function PWAInstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
-  const [showAndroidModal, setShowAndroidModal] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
 
   useEffect(() => {
-    // 1. Verificar si ya está ejecutándose como PWA instalada en la pantalla de inicio
+    // 1. Verificar si ya está ejecutándose como PWA instalada
     const isStandaloneMode =
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true;
@@ -32,9 +31,15 @@ export function PWAInstallPrompt() {
     const iosDevice = /iPhone|iPad|iPod/i.test(userAgent);
     setIsIOS(iosDevice);
 
-    // 4. Capturar evento de instalación nativo para Android / Chrome / Edge
+    // 4. Capturar el evento nativo si ya se disparó previamente en window.deferredPwaPrompt
+    if ((window as any).deferredPwaPrompt) {
+      setDeferredPrompt((window as any).deferredPwaPrompt);
+    }
+
+    // 5. Escuchar evento de instalación nativo para Android / Chrome
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
+      (window as any).deferredPwaPrompt = e;
       setDeferredPrompt(e);
       setShowBanner(true);
     };
@@ -59,16 +64,23 @@ export function PWAInstallPrompt() {
   const handleInstallClick = async () => {
     if (isIOS) {
       setShowIOSModal(true);
-    } else if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        cerrarBanner();
+      return;
+    }
+
+    const promptObj = deferredPrompt || (window as any).deferredPwaPrompt;
+
+    if (promptObj && typeof promptObj.prompt === 'function') {
+      try {
+        await promptObj.prompt();
+        const choice = await promptObj.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          cerrarBanner();
+        }
+        (window as any).deferredPwaPrompt = null;
+        setDeferredPrompt(null);
+      } catch (err) {
+        console.error('Error al invocar prompt nativo de Chrome:', err);
       }
-      setDeferredPrompt(null);
-    } else {
-      // Si el navegador no disparó beforeinstallprompt, mostrar instrucciones claras
-      setShowAndroidModal(true);
     }
   };
 
@@ -107,7 +119,7 @@ export function PWAInstallPrompt() {
         </div>
       </div>
 
-      {/* Modal instruccional para iPhone / iOS */}
+      {/* Modal instruccional solo para iPhone / iOS */}
       {showIOSModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
@@ -157,61 +169,6 @@ export function PWAInstallPrompt() {
 
             <button
               onClick={() => setShowIOSModal(false)}
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm"
-            >
-              Entendido
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal instruccional para Android / Chrome / Desktop */}
-      {showAndroidModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <span>🤖</span> Instalar en tu Dispositivo
-              </h3>
-              <button
-                onClick={() => setShowAndroidModal(false)}
-                className="text-gray-400 hover:text-gray-600 font-bold p-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3.5 text-sm text-gray-700">
-              <div className="flex items-start space-x-3">
-                <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
-                  1
-                </span>
-                <p>
-                  Abre el menú del navegador en los <strong>3 puntos (⋮)</strong> arriba a la derecha (o el ícono <strong>⊕</strong> en la barra de direcciones).
-                </p>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
-                  2
-                </span>
-                <p>
-                  Selecciona <strong>"Instalar Urbanito"</strong> o <strong>"Agregar a la pantalla principal"</strong>.
-                </p>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
-                  3
-                </span>
-                <p>
-                  Confirma la instalación y la App aparecerá en tu escritorio/celular.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowAndroidModal(false)}
               className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm"
             >
               Entendido

@@ -30,6 +30,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                window.deferredPwaPrompt = e;
+              });
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <PWARegister />
         <AuthProviderWrapper>{children}</AuthProviderWrapper>
