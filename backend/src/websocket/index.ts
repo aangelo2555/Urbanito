@@ -50,16 +50,29 @@ function handleAuth(ws: WebSocket, data: any) {
     clients.set(userId, { ws, userId, role });
   }
   ws.send(JSON.stringify({ type: 'auth_success' }));
-
-  // Enviar inmediatamente las ubicaciones activas al autenticarse
   handleSubscribeUbicaciones(ws);
+}
+
+export function finalizarUbicacionChofer(choferId: string) {
+  const ubic = activeUbicaciones.get(choferId);
+  if (ubic) {
+    ubic.inactivo = true;
+    ubic.estado_viaje = 'finalizado';
+    ubic.timestamp = Date.now();
+    activeUbicaciones.set(choferId, ubic);
+  }
+
+  try {
+    redis.del(`ubicacion:${choferId}`);
+  } catch (e) {}
+
+  emitirUbicacionesActualizadas();
 }
 
 async function handleUbicacionGPS(data: any) {
   const { choferId, lat, lng, velocidad, rumbo } = data;
   if (!choferId || lat === undefined || lng === undefined) return;
 
-  // Buscar viaje id activo para este chofer
   let viajeId = `viaje_${choferId}`;
   try {
     const res = await db.query(
@@ -83,13 +96,13 @@ async function handleUbicacionGPS(data: any) {
     lng,
     velocidad: velocidad || 0,
     rumbo: rumbo || 0,
+    inactivo: false,
+    estado_viaje: 'en_curso',
     timestamp: Date.now(),
   };
 
-  // Guardar en memoria
   activeUbicaciones.set(choferId, ubicacionObj);
 
-  // Intentar guardar en Redis si está disponible
   try {
     await redis.set(
       `ubicacion:${choferId}`,
@@ -98,19 +111,7 @@ async function handleUbicacionGPS(data: any) {
     );
   } catch (e) {}
 
-  // Construir mapa de ubicaciones activas (menos de 3 minutos de antigüedad)
-  const payloadMap: Record<string, any> = {};
-  activeUbicaciones.forEach((val, key) => {
-    if (Date.now() - val.timestamp < 180000) {
-      payloadMap[key] = val;
-    }
-  });
-
-  // Transmitir a todos los clientes (alumnos, admin, choferes)
-  broadcast({
-    type: 'ubicaciones_actualizadas',
-    ubicaciones: payloadMap,
-  });
+  emitirUbicacionesActualizadas();
 
   broadcast({
     type: 'ubicacion_actualizada',
@@ -121,22 +122,34 @@ async function handleUbicacionGPS(data: any) {
   });
 }
 
-function handleSubscribeUbicaciones(ws: WebSocket) {
+function emitirUbicacionesActualizadas() {
   const payloadMap: Record<string, any> = {};
+  const ahora = Date.now();
+
   activeUbicaciones.forEach((val, key) => {
-    if (Date.now() - val.timestamp < 180000) {
+    const msInactivo = ahora - val.timestamp;
+    
+    // Si han pasado más de 40 segundos sin señal GPS o el viaje finalizó
+    if (msInactivo > 40000 || val.estado_viaje === 'finalizado') {
+      val.inactivo = true;
+    }
+
+    // Mantener la combi inactiva (color gris) durante 2 minutos maximo antes de removerla completamente
+    if (msInactivo < 120000) {
       payloadMap[key] = val;
+    } else {
+      activeUbicaciones.delete(key);
     }
   });
 
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(
-      JSON.stringify({
-        type: 'ubicaciones_actualizadas',
-        ubicaciones: payloadMap,
-      })
-    );
-  }
+  broadcast({
+    type: 'ubicaciones_actualizadas',
+    ubicaciones: payloadMap,
+  });
+}
+
+function handleSubscribeUbicaciones(ws: WebSocket) {
+  emitirUbicacionesActualizadas();
 }
 
 function broadcast(message: any) {

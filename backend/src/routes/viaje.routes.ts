@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../config/database';
 import { requireAuth } from '../middleware/auth';
+import { finalizarUbicacionChofer } from '../websocket';
 
 const router = Router();
 
@@ -87,6 +88,9 @@ router.put('/:id/finalizar', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
+    const viajeRes = await db.query('SELECT chofer_id FROM viajes WHERE id = $1', [id]);
+    const choferId = viajeRes.rows[0]?.chofer_id;
+
     await db.query(
       `UPDATE viajes
        SET estado = 'finalizado',
@@ -95,6 +99,10 @@ router.put('/:id/finalizar', requireAuth, async (req, res) => {
        WHERE id = $1`,
       [id]
     );
+
+    if (choferId) {
+      finalizarUbicacionChofer(choferId);
+    }
 
     res.json({ success: true });
   } catch (error: any) {

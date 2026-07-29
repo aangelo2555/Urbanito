@@ -19,16 +19,20 @@ export function MarcadorCombiComponent({
   onSelect,
   onDeselect,
 }: MarcadorCombiProps) {
+  const msInactivo = Date.now() - new Date(combi.ultima_actualizacion).getTime();
+  const esInactivo = (combi as any).inactivo || (combi as any).estado_viaje === 'finalizado' || msInactivo > 40000;
+  const color = esInactivo ? '#8c8c8c' : '#1890ff';
+
   // Icono SVG de combi con rotación según el rumbo
   const iconoCombi = {
     path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
-    fillColor: '#1890ff',
-    fillOpacity: 1,
+    fillColor: color,
+    fillOpacity: esInactivo ? 0.6 : 1,
     strokeColor: '#ffffff',
     strokeWeight: 2,
     scale: 1.5,
     rotation: combi.rumbo || 0,
-    anchor: { x: 12, y: 12 } as google.maps.Point,
+    anchor: typeof window !== 'undefined' && (window as any).google?.maps ? new google.maps.Point(12, 12) : undefined,
   };
 
   return (

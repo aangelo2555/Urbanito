@@ -154,7 +154,7 @@ function MapaLeaflet({
         layerGroupRef.current = layerGroup;
         mapRef.current = map;
       } else {
-        mapRef.current.setView([centro.lat, centro.lng], zoom);
+        // No forzar setView en re-renders para permitir al usuario hacer zoom y mover libremente el mapa
       }
 
       // Dibujar capas (Polyline, combis, alumnos)
@@ -167,27 +167,35 @@ function MapaLeaflet({
           L.polyline(coords, { color: '#1890ff', weight: 5, opacity: 0.8 }).addTo(layerGroupRef.current);
         }
 
-        // 2. Marcadores de Combis en tiempo real
+        // 2. Marcadores de Combis en tiempo real (Color azul en curso / Gris si finalizó o desactivó GPS)
         if (combis) {
           Object.values(combis).forEach((c) => {
+            const msInactivo = Date.now() - new Date(c.ultima_actualizacion).getTime();
+            const esInactivo = (c as any).inactivo || (c as any).estado_viaje === 'finalizado' || msInactivo > 40000;
+
+            const bgColor = esInactivo ? '#8c8c8c' : '#1890ff';
+            const opacity = esInactivo ? 0.75 : 1.0;
+            const estadoTag = esInactivo ? ' (Inactivo/Finalizado)' : '';
+
             const combiIcon = L.divIcon({
               className: 'custom-combi-icon',
               html: `
-                <div style="background-color: #1890ff; color: white; padding: 6px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; items-center: center; gap: 4px; white-space: nowrap;">
-                  🚌 <span>${c.placa}</span>
+                <div style="background-color: ${bgColor}; opacity: ${opacity}; color: white; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 11px; border: 2px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 4px; white-space: nowrap;">
+                  🚌 <span>${c.placa}${estadoTag}</span>
                 </div>
               `,
-              iconSize: [80, 30],
-              iconAnchor: [40, 15],
+              iconSize: [120, 28],
+              iconAnchor: [60, 14],
             });
 
             const marker = L.marker([c.posicion.lat, c.posicion.lng], { icon: combiIcon }).addTo(layerGroupRef.current);
             marker.bindPopup(`
               <div style="padding: 4px;">
-                <h4 style="margin: 0 0 4px 0; font-weight: bold;">Combi ${c.placa}</h4>
+                <h4 style="margin: 0 0 4px 0; font-weight: bold; color: ${bgColor};">Combi ${c.placa} ${estadoTag}</h4>
                 <p style="margin: 2px 0;"><b>Chofer:</b> ${c.chofer_nombre}</p>
+                <p style="margin: 2px 0;"><b>Estado del viaje:</b> ${esInactivo ? '<span style="color: #8c8c8c; font-weight: bold;">Finalizado / GPS Inactivo</span>' : '<span style="color: #52c41a; font-weight: bold;">En Curso</span>'}</p>
                 <p style="margin: 2px 0;"><b>Tiempo en ruta:</b> ${c.tiempo_en_ruta_minutos} min</p>
-                ${c.velocidad ? `<p style="margin: 2px 0;"><b>Velocidad:</b> ${Math.round(c.velocidad)} km/h</p>` : ''}
+                ${c.velocidad && !esInactivo ? `<p style="margin: 2px 0;"><b>Velocidad:</b> ${Math.round(c.velocidad)} km/h</p>` : ''}
               </div>
             `);
           });
