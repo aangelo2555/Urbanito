@@ -26,6 +26,8 @@ const defaultOptions = {
   fullscreenControl: true,
 };
 
+const GOOGLE_MAPS_LIBRARIES: ('places' | 'geometry')[] = ['places', 'geometry'];
+
 export function MapaBase({
   centro,
   zoom = 14,
@@ -36,7 +38,7 @@ export function MapaBase({
 }: MapaBaseProps) {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places', 'geometry'],
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   const [map, setMap] = useState<google.maps.Map | null>(null);

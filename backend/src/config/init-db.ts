@@ -63,6 +63,14 @@ export async function autoMigrateDatabase() {
       await db.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);`);
       await db.query(`ALTER TABLE alumnos ALTER COLUMN codigo_estudiante TYPE VARCHAR(50);`);
       await db.query(`ALTER TABLE ubicaciones_espera_alumnos ALTER COLUMN codigo_estudiante TYPE VARCHAR(50);`);
+      
+      // Actualizar hash del admin si es el ficticio o está vacío
+      await db.query(`
+        UPDATE usuarios 
+        SET password_hash = '$2a$10$QHZ1MqCIHvBu.srWkHglBeKiw0SN9ppwc8xSNrYojQ/.3TofGBppK'
+        WHERE email = 'admin@urbanito.com' 
+          AND (password_hash IS NULL OR password_hash LIKE '%r9G5QjH2P9wLwZ3nE1dG5%');
+      `);
     }
   } catch (error) {
     console.error('⚠️ Auto database migration failed/skipped:', error);
