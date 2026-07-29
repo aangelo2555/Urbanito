@@ -54,13 +54,7 @@ function handleAuth(ws: WebSocket, data: any) {
 }
 
 export function finalizarUbicacionChofer(choferId: string) {
-  const ubic = activeUbicaciones.get(choferId);
-  if (ubic) {
-    ubic.inactivo = true;
-    ubic.estado_viaje = 'finalizado';
-    ubic.timestamp = Date.now();
-    activeUbicaciones.set(choferId, ubic);
-  }
+  activeUbicaciones.delete(choferId);
 
   try {
     redis.del(`ubicacion:${choferId}`);
@@ -107,7 +101,7 @@ async function handleUbicacionGPS(data: any) {
     await redis.set(
       `ubicacion:${choferId}`,
       JSON.stringify(ubicacionObj),
-      { EX: 120 }
+      { EX: 3600 }
     );
   } catch (e) {}
 
@@ -124,21 +118,11 @@ async function handleUbicacionGPS(data: any) {
 
 function emitirUbicacionesActualizadas() {
   const payloadMap: Record<string, any> = {};
-  const ahora = Date.now();
 
   activeUbicaciones.forEach((val, key) => {
-    const msInactivo = ahora - val.timestamp;
-    
-    // Si han pasado más de 40 segundos sin señal GPS o el viaje finalizó
-    if (msInactivo > 40000 || val.estado_viaje === 'finalizado') {
-      val.inactivo = true;
-    }
-
-    // Mantener la combi inactiva (color gris) durante 2 minutos maximo antes de removerla completamente
-    if (msInactivo < 120000) {
+    // Si el viaje no está explícitamente finalizado, la combi permanece activa en el mapa
+    if (val.estado_viaje !== 'finalizado') {
       payloadMap[key] = val;
-    } else {
-      activeUbicaciones.delete(key);
     }
   });
 

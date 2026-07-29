@@ -19,8 +19,7 @@ export function MarcadorCombiComponent({
   onSelect,
   onDeselect,
 }: MarcadorCombiProps) {
-  const msInactivo = Date.now() - new Date(combi.ultima_actualizacion).getTime();
-  const esInactivo = (combi as any).inactivo || (combi as any).estado_viaje === 'finalizado' || msInactivo > 40000;
+  const esInactivo = (combi as any).estado_viaje === 'finalizado';
   const color = esInactivo ? '#8c8c8c' : '#1890ff';
 
   // Icono SVG de combi con rotación según el rumbo

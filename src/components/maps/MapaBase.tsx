@@ -167,15 +167,14 @@ function MapaLeaflet({
           L.polyline(coords, { color: '#1890ff', weight: 5, opacity: 0.8 }).addTo(layerGroupRef.current);
         }
 
-        // 2. Marcadores de Combis en tiempo real (Color azul en curso / Gris si finalizó o desactivó GPS)
+        // 2. Marcadores de Combis en tiempo real (Azul brillante mientras el viaje esté en curso)
         if (combis) {
           Object.values(combis).forEach((c) => {
-            const msInactivo = Date.now() - new Date(c.ultima_actualizacion).getTime();
-            const esInactivo = (c as any).inactivo || (c as any).estado_viaje === 'finalizado' || msInactivo > 40000;
+            const esInactivo = (c as any).estado_viaje === 'finalizado';
 
             const bgColor = esInactivo ? '#8c8c8c' : '#1890ff';
             const opacity = esInactivo ? 0.75 : 1.0;
-            const estadoTag = esInactivo ? ' (Inactivo/Finalizado)' : '';
+            const estadoTag = esInactivo ? ' (Finalizado)' : '';
 
             const combiIcon = L.divIcon({
               className: 'custom-combi-icon',
@@ -184,8 +183,8 @@ function MapaLeaflet({
                   🚌 <span>${c.placa}${estadoTag}</span>
                 </div>
               `,
-              iconSize: [120, 28],
-              iconAnchor: [60, 14],
+              iconSize: [110, 28],
+              iconAnchor: [55, 14],
             });
 
             const marker = L.marker([c.posicion.lat, c.posicion.lng], { icon: combiIcon }).addTo(layerGroupRef.current);
