@@ -17,6 +17,9 @@ export class AuthService {
    * Registrar un nuevo alumno
    */
   static async registrarAlumno(data: RegistroAlumnoDTO): Promise<void> {
+    if (!auth) {
+      throw new Error('Firebase Auth no está configurado. Por favor configura las credenciales de Firebase.');
+    }
     // 1. Crear usuario en Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(
       auth,
@@ -52,6 +55,9 @@ export class AuthService {
    * Iniciar sesión
    */
   static async login(credentials: LoginDTO): Promise<Usuario> {
+    if (!auth) {
+      throw new Error('Firebase Auth no está configurado. Por favor configura las credenciales de Firebase.');
+    }
     // 1. Autenticar con Firebase
     let email = credentials.email_o_codigo;
 
@@ -89,7 +95,9 @@ export class AuthService {
    * Cerrar sesión
    */
   static async logout(): Promise<void> {
-    await firebaseSignOut(auth);
+    if (auth) {
+      await firebaseSignOut(auth);
+    }
     if (typeof window !== 'undefined') {
       localStorage.removeItem('authToken');
     }
