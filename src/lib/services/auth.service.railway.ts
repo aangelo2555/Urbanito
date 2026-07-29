@@ -113,7 +113,7 @@ export class AuthService {
     const firebaseAuth = auth;
     if (!firebaseAuth) return null;
     return new Promise((resolve) => {
-      const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+      const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser: any) => {
         unsubscribe();
         
         if (firebaseUser) {
@@ -149,7 +149,7 @@ export class AuthService {
       callback(null);
       return () => {};
     }
-    return onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+    return onAuthStateChanged(firebaseAuth, async (firebaseUser: any) => {
       if (firebaseUser) {
         try {
           const idToken = await firebaseUser.getIdToken();
