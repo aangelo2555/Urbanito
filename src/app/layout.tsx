@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import AuthProviderWrapper from '@/components/providers/AuthProviderWrapper';
 import { PWARegister } from '@/components/providers/PWARegister';
+import { PWAInstallPrompt } from '@/components/shared/PWAInstallPrompt';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <PWARegister />
         <AuthProviderWrapper>{children}</AuthProviderWrapper>
+        <PWAInstallPrompt />
       </body>
     </html>
   );
