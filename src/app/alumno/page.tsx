@@ -177,6 +177,9 @@ export default function AlumnoPage() {
           zoom={zoom}
           altura="100%"
           mostrarTrafico={mostrarTrafico}
+          polyline={ruta?.polyline}
+          combis={combis}
+          posicionUsuario={posicion || undefined}
         >
           {/* Ruta */}
           {ruta && <LineaRuta coordenadas={ruta.polyline} />}

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, Polyline, TrafficLayer } from '@react-google-maps/api';
-import { Coordenada } from '@/types';
+import { Coordenada, MarcadorCombi, MarcadorAlumnoEsperando } from '@/types';
 import { Loading } from '@/components/shared/Loading';
 
 interface MapaBaseProps {
@@ -12,6 +12,12 @@ interface MapaBaseProps {
   mostrarTrafico?: boolean;
   children?: React.ReactNode;
   onMapClick?: (coordenada: Coordenada) => void;
+
+  // Props adicionales para sincronizar mapa Leaflet y Google Maps
+  polyline?: Coordenada[];
+  combis?: Record<string, MarcadorCombi>;
+  alumnos?: MarcadorAlumnoEsperando[];
+  posicionUsuario?: Coordenada;
 }
 
 const mapContainerStyle = {
@@ -109,10 +115,15 @@ function MapaLeaflet({
   centro,
   zoom = 14,
   altura = '100%',
+  polyline,
+  combis,
+  alumnos,
+  posicionUsuario,
   onMapClick,
 }: MapaBaseProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
+  const layerGroupRef = useRef<any>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -139,16 +150,90 @@ function MapaLeaflet({
           });
         }
 
+        const layerGroup = L.layerGroup().addTo(map);
+        layerGroupRef.current = layerGroup;
         mapRef.current = map;
       } else {
         mapRef.current.setView([centro.lat, centro.lng], zoom);
+      }
+
+      // Dibujar capas (Polyline, combis, alumnos)
+      if (layerGroupRef.current) {
+        layerGroupRef.current.clearLayers();
+
+        // 1. Trazar Polyline de la Ruta
+        if (polyline && polyline.length > 0) {
+          const coords = polyline.map((c) => [c.lat, c.lng] as [number, number]);
+          L.polyline(coords, { color: '#1890ff', weight: 5, opacity: 0.8 }).addTo(layerGroupRef.current);
+        }
+
+        // 2. Marcadores de Combis en tiempo real
+        if (combis) {
+          Object.values(combis).forEach((c) => {
+            const combiIcon = L.divIcon({
+              className: 'custom-combi-icon',
+              html: `
+                <div style="background-color: #1890ff; color: white; padding: 6px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; items-center: center; gap: 4px; white-space: nowrap;">
+                  🚌 <span>${c.placa}</span>
+                </div>
+              `,
+              iconSize: [80, 30],
+              iconAnchor: [40, 15],
+            });
+
+            const marker = L.marker([c.posicion.lat, c.posicion.lng], { icon: combiIcon }).addTo(layerGroupRef.current);
+            marker.bindPopup(`
+              <div style="padding: 4px;">
+                <h4 style="margin: 0 0 4px 0; font-weight: bold;">Combi ${c.placa}</h4>
+                <p style="margin: 2px 0;"><b>Chofer:</b> ${c.chofer_nombre}</p>
+                <p style="margin: 2px 0;"><b>Tiempo en ruta:</b> ${c.tiempo_en_ruta_minutos} min</p>
+                ${c.velocidad ? `<p style="margin: 2px 0;"><b>Velocidad:</b> ${Math.round(c.velocidad)} km/h</p>` : ''}
+              </div>
+            `);
+          });
+        }
+
+        // 3. Marcadores de Alumnos Esperando
+        if (alumnos) {
+          alumnos.forEach((a) => {
+            const alumnoIcon = L.divIcon({
+              className: 'custom-alumno-icon',
+              html: `
+                <div style="background-color: #faad14; color: white; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); white-space: nowrap;">
+                  🙋 Esperando (${a.tiempo_esperando_minutos}m)
+                </div>
+              `,
+              iconSize: [100, 24],
+              iconAnchor: [50, 12],
+            });
+
+            const marker = L.marker([a.posicion.lat, a.posicion.lng], { icon: alumnoIcon }).addTo(layerGroupRef.current);
+            marker.bindPopup(`
+              <div style="padding: 4px;">
+                <p style="margin: 0; font-weight: bold;">Alumno en Paradero</p>
+                <p style="margin: 2px 0;">Tiempo esperando: ${a.tiempo_esperando_minutos} minutos</p>
+              </div>
+            `);
+          });
+        }
+
+        // 4. Ubicación actual del usuario
+        if (posicionUsuario) {
+          const userIcon = L.divIcon({
+            className: 'custom-user-icon',
+            html: `<div style="background-color: #52c41a; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 8px rgba(82,196,26,0.8);"></div>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+          });
+          L.marker([posicionUsuario.lat, posicionUsuario.lng], { icon: userIcon }).addTo(layerGroupRef.current);
+        }
       }
     });
 
     return () => {
       isMounted = false;
     };
-  }, [centro, zoom, onMapClick]);
+  }, [centro, zoom, polyline, combis, alumnos, posicionUsuario, onMapClick]);
 
   return (
     <div className="relative w-full" style={{ height: altura }}>

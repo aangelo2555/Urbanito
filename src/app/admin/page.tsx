@@ -152,6 +152,9 @@ export default function AdminDashboardPage() {
             zoom={14}
             altura="100%"
             mostrarTrafico={true}
+            polyline={rutas[0]?.polyline}
+            combis={combis}
+            alumnos={alumnosEsperando}
           >
             {/* Rutas */}
             {rutas.map((ruta) => (

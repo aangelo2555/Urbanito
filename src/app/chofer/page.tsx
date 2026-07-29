@@ -199,6 +199,9 @@ export default function ChoferPage() {
           zoom={15}
           altura="100%"
           mostrarTrafico={true}
+          polyline={ruta?.polyline}
+          alumnos={alumnosEsperando}
+          posicionUsuario={posicionActual || undefined}
         >
           {ruta && <LineaRuta coordenadas={ruta.polyline} />}
           
