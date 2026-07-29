@@ -10,16 +10,32 @@ export function PWAInstallPrompt() {
   const [showBanner, setShowBanner] = useState(true);
 
   useEffect(() => {
-    // 1. Verificar si ya está ejecutándose como PWA instalada
-    const isStandaloneMode =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true;
+    // 1. Verificar si ya está ejecutándose como PWA instalada o disponible en el sistema
+    const checkInstalled = async () => {
+      const isStandaloneMode =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+        (window.navigator as any).standalone === true;
 
-    if (isStandaloneMode) {
-      setIsStandalone(true);
-      setShowBanner(false);
-      return;
-    }
+      if (isStandaloneMode) {
+        setIsStandalone(true);
+        setShowBanner(false);
+        return;
+      }
+
+      if ('getInstalledRelatedApps' in navigator) {
+        try {
+          const relatedApps = await (navigator as any).getInstalledRelatedApps();
+          if (relatedApps && relatedApps.length > 0) {
+            setIsStandalone(true);
+            setShowBanner(false);
+            return;
+          }
+        } catch (e) {}
+      }
+    };
+
+    checkInstalled();
 
     // 2. Verificar si el usuario ya lo cerró en esta sesión
     if (sessionStorage.getItem('pwa_banner_closed') === 'true') {
@@ -44,10 +60,17 @@ export function PWAInstallPrompt() {
       setShowBanner(true);
     };
 
+    const handleAppInstalled = () => {
+      setIsStandalone(true);
+      setShowBanner(false);
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 

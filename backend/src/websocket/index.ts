@@ -29,6 +29,10 @@ export function setupWebSocket(wss: WebSocketServer) {
           case 'subscribe_ubicaciones':
             handleSubscribeUbicaciones(ws);
             break;
+
+          case 'espera_actualizada':
+            notificarEsperaActualizada();
+            break;
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
@@ -53,12 +57,25 @@ function handleAuth(ws: WebSocket, data: any) {
   handleSubscribeUbicaciones(ws);
 }
 
+export function notificarEsperaActualizada() {
+  broadcast({
+    type: 'espera_actualizada',
+    timestamp: Date.now(),
+  });
+}
+
 export function finalizarUbicacionChofer(choferId: string) {
   activeUbicaciones.delete(choferId);
 
   try {
     redis.del(`ubicacion:${choferId}`);
   } catch (e) {}
+
+  broadcast({
+    type: 'viaje_finalizado',
+    choferId,
+    timestamp: Date.now(),
+  });
 
   emitirUbicacionesActualizadas();
 }
@@ -120,7 +137,6 @@ function emitirUbicacionesActualizadas() {
   const payloadMap: Record<string, any> = {};
 
   activeUbicaciones.forEach((val, key) => {
-    // Si el viaje no está explícitamente finalizado, la combi permanece activa en el mapa
     if (val.estado_viaje !== 'finalizado') {
       payloadMap[key] = val;
     }

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../config/database';
 import { requireAuth } from '../middleware/auth';
+import { notificarEsperaActualizada } from '../websocket';
 
 const router = Router();
 
@@ -55,6 +56,8 @@ router.post('/', requireAuth, async (req, res) => {
       [realAlumnoId, usuario_nombre, codigo_estudiante || 'ALUMNO', lat, lng, ruta_id || null]
     );
 
+    notificarEsperaActualizada();
+
     res.status(201).json({ id: result.rows[0].id });
   } catch (error: any) {
     console.error('Error al activar espera:', error);
@@ -72,6 +75,8 @@ router.put('/alumno/:alumnoId/desactivar', requireAuth, async (req, res) => {
       `UPDATE ubicaciones_espera_alumnos SET activo = FALSE WHERE alumno_id = $1 OR alumno_id IN (SELECT id FROM alumnos WHERE usuario_id = $2)`,
       [realAlumnoId, alumnoId]
     );
+
+    notificarEsperaActualizada();
 
     res.json({ success: true });
   } catch (error: any) {
