@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import AuthProviderWrapper from '@/components/providers/AuthProviderWrapper';
+import { PWARegister } from '@/components/providers/PWARegister';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
+        <PWARegister />
         <AuthProviderWrapper>{children}</AuthProviderWrapper>
       </body>
     </html>

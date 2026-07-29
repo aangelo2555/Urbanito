@@ -66,6 +66,40 @@ export default function ChoferPage() {
     }
   }, [ruta]);
 
+  // Mantener la pantalla encendida (Screen Wake Lock) durante un viaje activo
+  useEffect(() => {
+    let wakeLockSentinel: any = null;
+
+    const solicitarWakeLock = async () => {
+      if (viaje && typeof window !== 'undefined' && 'wakeLock' in navigator) {
+        try {
+          wakeLockSentinel = await (navigator as any).wakeLock.request('screen');
+        } catch (err) {
+          console.warn('Wake Lock no disponible:', err);
+        }
+      }
+    };
+
+    if (viaje) {
+      solicitarWakeLock();
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && viaje) {
+        solicitarWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLockSentinel) {
+        wakeLockSentinel.release().catch(() => {});
+      }
+    };
+  }, [viaje]);
+
   // Rastrear GPS durante el viaje
   const { error: errorGPS, watching } = useGeolocationWatch(
     useCallback(
