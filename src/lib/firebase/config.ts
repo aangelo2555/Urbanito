@@ -3,7 +3,9 @@
  * El resto de funcionalidades (DB, Storage) ahora usan Railway
  */
 
+// @ts-ignore
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+// @ts-ignore
 import { getAuth, Auth } from 'firebase/auth';
 
 const firebaseConfig = {

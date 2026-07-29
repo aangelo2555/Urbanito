@@ -3,6 +3,7 @@
  */
 
 import { auth } from '@/lib/firebase/config';
+// @ts-ignore
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,

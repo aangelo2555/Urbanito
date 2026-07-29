@@ -1,7 +1,3 @@
-// Declaración de módulos de Firebase para TypeScript
-declare module 'firebase/app';
-declare module 'firebase/auth';
-
 // Tipos de roles del sistema
 export type RolUsuario = 'admin' | 'chofer' | 'alumno';
 
