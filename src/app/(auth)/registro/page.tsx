@@ -35,7 +35,7 @@ export default function RegistroPage() {
     }
 
     if (!validarCodigoEstudiante(formData.codigo_estudiante)) {
-      newErrors.codigo_estudiante = 'Código de estudiante inválido (6-8 dígitos)';
+      newErrors.codigo_estudiante = 'Código de estudiante inválido (ej. 111.0222.033 o 12345678)';
     }
 
     if (formData.password.length < 8) {
@@ -122,9 +122,9 @@ export default function RegistroPage() {
             onChange={(e) =>
               setFormData({ ...formData, codigo_estudiante: e.target.value })
             }
-            placeholder="12345678"
+            placeholder="ej. 111.0222.033"
             error={errors.codigo_estudiante}
-            helperText="Tu código universitario de 6-8 dígitos"
+            helperText="Tu código universitario (ej. 111.0222.033 o 12345678)"
             required
           />
 

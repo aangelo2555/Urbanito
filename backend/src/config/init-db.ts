@@ -59,8 +59,10 @@ export async function autoMigrateDatabase() {
       }
     } else {
       console.log('✅ PostgreSQL tables already exist.');
-      // Asegurar que la columna password_hash existe
+      // Asegurar que las columnas tengan los tipos adecuados
       await db.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);`);
+      await db.query(`ALTER TABLE alumnos ALTER COLUMN codigo_estudiante TYPE VARCHAR(50);`);
+      await db.query(`ALTER TABLE ubicaciones_espera_alumnos ALTER COLUMN codigo_estudiante TYPE VARCHAR(50);`);
     }
   } catch (error) {
     console.error('⚠️ Auto database migration failed/skipped:', error);

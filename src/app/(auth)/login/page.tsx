@@ -70,7 +70,7 @@ export default function LoginPage() {
             onChange={(e) =>
               setFormData({ ...formData, email_o_codigo: e.target.value })
             }
-            placeholder="ejemplo@unab.edu.pe o 12345678"
+            placeholder="ejemplo@unab.edu.pe o 111.0222.033"
             required
             autoComplete="username"
           />

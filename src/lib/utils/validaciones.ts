@@ -2,11 +2,12 @@
 
 /**
  * Valida el formato del código de estudiante de la UNAB
- * Formato esperado: 6-8 dígitos numéricos
+ * Formato flexible: de 5 a 25 caracteres (números, letras, puntos o guiones)
+ * Ejemplo: 111.0222.033 o 12345678
  */
 export function validarCodigoEstudiante(codigo: string): boolean {
-  const regex = /^\d{6,8}$/;
-  return regex.test(codigo);
+  const regex = /^[\w.-]{5,25}$/;
+  return regex.test(codigo.trim());
 }
 
 /**

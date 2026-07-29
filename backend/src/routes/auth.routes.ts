@@ -26,13 +26,13 @@ router.post('/login', async (req, res) => {
 
     let usuario: any = null;
 
-    // Verificar si es código de estudiante (6 a 8 dígitos)
-    if (/^\d{6,8}$/.test(email_o_codigo)) {
+    // Verificar si es código de estudiante (si no contiene @)
+    if (!email_o_codigo.includes('@')) {
       const alumnoRes = await db.query(
         `SELECT u.* FROM usuarios u
          JOIN alumnos a ON u.id = a.usuario_id
          WHERE a.codigo_estudiante = $1`,
-        [email_o_codigo]
+        [email_o_codigo.trim()]
       );
       usuario = alumnoRes.rows[0];
     } else {

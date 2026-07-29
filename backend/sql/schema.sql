@@ -88,7 +88,7 @@ CREATE INDEX IF NOT EXISTS idx_choferes_placa ON choferes(placa_vehiculo);
 CREATE TABLE IF NOT EXISTS alumnos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    codigo_estudiante VARCHAR(8) UNIQUE NOT NULL,
+    codigo_estudiante VARCHAR(50) UNIQUE NOT NULL,
     telefono VARCHAR(9),
     notificaciones_activas BOOLEAN DEFAULT TRUE,
     minutos_notificacion INTEGER DEFAULT 5,
@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS ubicaciones_espera_alumnos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     alumno_id UUID NOT NULL REFERENCES alumnos(id) ON DELETE CASCADE,
     usuario_nombre VARCHAR(255) NOT NULL,
-    codigo_estudiante VARCHAR(8) NOT NULL,
+    codigo_estudiante VARCHAR(50) NOT NULL,
     lat DECIMAL(10, 8) NOT NULL,
     lng DECIMAL(11, 8) NOT NULL,
     activo BOOLEAN DEFAULT TRUE,
