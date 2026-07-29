@@ -13,18 +13,25 @@ const firebaseConfig = {
 };
 
 // Inicializar Firebase solo una vez (solo Auth)
-let app: FirebaseApp;
-let auth: Auth;
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
 
 if (typeof window !== 'undefined') {
-  // Solo inicializar en el cliente
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApps()[0];
+  try {
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+    if (apiKey && apiKey !== 'your_firebase_api_key' && !apiKey.includes('Dummy')) {
+      if (!getApps().length) {
+        app = initializeApp(firebaseConfig);
+      } else {
+        app = getApps()[0];
+      }
+      auth = getAuth(app);
+    } else {
+      console.warn('⚠️ Firebase API key no configurada o es inválida. Firebase Auth pausado.');
+    }
+  } catch (error) {
+    console.error('⚠️ Error al inicializar Firebase:', error);
   }
-
-  auth = getAuth(app);
 }
 
 export { app, auth };

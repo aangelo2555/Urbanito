@@ -99,6 +99,7 @@ export class AuthService {
    * Obtener usuario actual
    */
   static async obtenerUsuarioActual(): Promise<Usuario | null> {
+    if (!auth) return null;
     return new Promise((resolve) => {
       const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
         unsubscribe();
@@ -131,6 +132,10 @@ export class AuthService {
    * Observar cambios en la autenticación
    */
   static onAuthChange(callback: (usuario: Usuario | null) => void): () => void {
+    if (!auth) {
+      callback(null);
+      return () => {};
+    }
     return onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
