@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle } from '@/components/shared/Card';
+import { Card } from '@/components/shared/Card';
 import { Button } from '@/components/shared/Button';
+import { Input } from '@/components/shared/Input';
 import { Alert } from '@/components/shared/Alert';
 import { ChoferService } from '@/lib/services/chofer.service';
-import { Chofer, EstadoAutorizacion } from '@/types';
+import { RutaService } from '@/lib/services/ruta.service';
+import { Chofer, Ruta, EstadoAutorizacion } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import { formatearDNI, formatearPlaca, formatearTelefono } from '@/lib/utils/validaciones';
 import { formatearFechaCorta } from '@/lib/utils/fechas';
@@ -13,12 +15,28 @@ import { formatearFechaCorta } from '@/lib/utils/fechas';
 export default function ChoferesPage() {
   const { usuario } = useAuth();
   const [choferes, setChoferes] = useState<Chofer[]>([]);
+  const [rutas, setRutas] = useState<Ruta[]>([]);
   const [loading, setLoading] = useState(true);
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
 
+  // Estado del Modal para Agregar Chofer
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [formData, setFormData] = useState({
+    nombre: '',
+    email: '',
+    password: '',
+    dni: '',
+    telefono: '',
+    placa_vehiculo: '',
+    ruta_id: '',
+  });
+
   useEffect(() => {
     cargarChoferes();
+    cargarRutas();
   }, []);
 
   const cargarChoferes = async () => {
@@ -30,6 +48,18 @@ export default function ChoferesPage() {
       setError(err.message || 'Error al cargar choferes');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cargarRutas = async () => {
+    try {
+      const data = await RutaService.obtenerRutasActivas();
+      setRutas(data);
+      if (data.length > 0) {
+        setFormData((prev) => ({ ...prev, ruta_id: data[0].id }));
+      }
+    } catch (err) {
+      console.error('Error al cargar rutas:', err);
     }
   };
 
@@ -46,6 +76,51 @@ export default function ChoferesPage() {
       await cargarChoferes();
     } catch (err: any) {
       setError(err.message || 'Error al actualizar estado');
+    }
+  };
+
+  const handleCrearChofer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!usuario) return;
+
+    setFormError('');
+
+    if (!formData.nombre.trim() || !formData.email.trim() || !formData.dni.trim() || !formData.placa_vehiculo.trim()) {
+      setFormError('Por favor completa todos los campos requeridos');
+      return;
+    }
+
+    try {
+      setGuardando(true);
+      await ChoferService.registrarChofer(
+        {
+          nombre: formData.nombre,
+          email: formData.email,
+          password: formData.password || 'chofer123',
+          dni: formData.dni,
+          telefono: formData.telefono,
+          placa_vehiculo: formData.placa_vehiculo,
+          ruta_id: formData.ruta_id || (rutas[0]?.id || ''),
+        },
+        usuario.id
+      );
+
+      setMensaje('Chofer registrado y autorizado exitosamente');
+      setMostrarModal(false);
+      setFormData({
+        nombre: '',
+        email: '',
+        password: '',
+        dni: '',
+        telefono: '',
+        placa_vehiculo: '',
+        ruta_id: rutas[0]?.id || '',
+      });
+      await cargarChoferes();
+    } catch (err: any) {
+      setFormError(err.message || 'Error al registrar chofer');
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -72,8 +147,8 @@ export default function ChoferesPage() {
             Administra y autoriza a los choferes del sistema
           </p>
         </div>
-        <Button variant="primary">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <Button variant="primary" onClick={() => setMostrarModal(true)}>
+          <svg className="w-5 h-5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
               d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
@@ -91,30 +166,34 @@ export default function ChoferesPage() {
         <Alert type="error" message={error} onClose={() => setError('')} />
       )}
 
+      {/* Tabla de choferes */}
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Chofer
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                  Email
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   DNI
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Placa
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Teléfono
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Estado
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Registrado
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">
                   Acciones
                 </th>
               </tr>
@@ -122,14 +201,14 @@ export default function ChoferesPage() {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                     Cargando choferes...
                   </td>
                 </tr>
               ) : choferes.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
-                    No hay choferes registrados
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    No hay choferes registrados. Presiona "+ Agregar Chofer" para registrar uno.
                   </td>
                 </tr>
               ) : (
@@ -137,28 +216,21 @@ export default function ChoferesPage() {
                   <tr key={chofer.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4">
                       <div className="flex items-center">
-                        {chofer.foto_url ? (
-                          <img
-                            src={chofer.foto_url}
-                            alt={`Foto de ${chofer.usuario_id}`}
-                            className="w-10 h-10 rounded-full object-cover mr-3"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                            <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                        )}
-                        <div className="text-sm font-medium text-gray-900">
-                          {chofer.usuario_id}
+                        <div className="w-9 h-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center mr-3 font-bold text-sm">
+                          {((chofer as any).nombre || 'C').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          {(chofer as any).nombre || 'Chofer'}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-700">
-                      {formatearDNI(chofer.dni)}
+                    <td className="px-4 py-4 text-sm text-gray-600">
+                      {(chofer as any).email || '-'}
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-700 font-mono">
+                      {formatearDNI(chofer.dni)}
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-700 font-mono font-bold">
                       {formatearPlaca(chofer.placa_vehiculo)}
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-700">
@@ -167,7 +239,7 @@ export default function ChoferesPage() {
                     <td className="px-4 py-4">
                       {getEstadoBadge(chofer.estado_autorizacion)}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-700">
+                    <td className="px-4 py-4 text-sm text-gray-600">
                       {formatearFechaCorta(chofer.creado_en)}
                     </td>
                     <td className="px-4 py-4 text-right space-x-2">
@@ -206,6 +278,112 @@ export default function ChoferesPage() {
           </table>
         </div>
       </Card>
+
+      {/* Modal para Agregar Chofer */}
+      {mostrarModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-gray-100">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900">Agregar Nuevo Chofer</h3>
+              <button
+                onClick={() => setMostrarModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleCrearChofer} className="p-6 space-y-4">
+              {formError && <Alert type="error" message={formError} onClose={() => setFormError('')} />}
+
+              <Input
+                label="Nombre Completo"
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                placeholder="ej. Juan Pérez"
+                required
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Correo Electrónico"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="chofer@urbanito.com"
+                  required
+                />
+                <Input
+                  label="Contraseña"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Por defecto: chofer123"
+                  helperText="Opcional (defecto: chofer123)"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Input
+                  label="DNI"
+                  type="text"
+                  value={formData.dni}
+                  onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+                  placeholder="12345678"
+                  maxLength={8}
+                  required
+                />
+                <Input
+                  label="Teléfono"
+                  type="tel"
+                  value={formData.telefono}
+                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                  placeholder="999888777"
+                  maxLength={9}
+                  required
+                />
+                <Input
+                  label="Placa Vehículo"
+                  type="text"
+                  value={formData.placa_vehiculo}
+                  onChange={(e) => setFormData({ ...formData, placa_vehiculo: e.target.value.toUpperCase() })}
+                  placeholder="ABC-123"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ruta Asignada
+                </label>
+                <select
+                  value={formData.ruta_id}
+                  onChange={(e) => setFormData({ ...formData, ruta_id: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  {rutas.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.nombre} ({r.origen} → {r.destino})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100">
+                <Button variant="secondary" type="button" onClick={() => setMostrarModal(false)}>
+                  Cancelar
+                </Button>
+                <Button variant="primary" type="submit" loading={guardando}>
+                  Registrar Chofer
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

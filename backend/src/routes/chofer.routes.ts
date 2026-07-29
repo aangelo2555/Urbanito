@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { db } from '../config/database';
 import { requireAuth, requireAdmin } from '../middleware/auth';
 
@@ -60,6 +61,7 @@ router.post('/', requireAdmin, async (req, res) => {
     const {
       nombre,
       email,
+      password = 'chofer123',
       dni,
       telefono,
       placa_vehiculo,
@@ -67,28 +69,51 @@ router.post('/', requireAdmin, async (req, res) => {
       foto_url,
       creado_por,
     } = req.body;
+
+    if (!nombre || !email || !dni || !telefono || !placa_vehiculo) {
+      return res.status(400).json({ error: 'Nombre, email, DNI, teléfono y placa son requeridos' });
+    }
+
+    // Verificar duplicados
+    const checkEmail = await db.query('SELECT id FROM usuarios WHERE email = $1', [email.toLowerCase()]);
+    if (checkEmail.rows.length > 0) {
+      return res.status(400).json({ error: 'El correo electrónico ya está registrado' });
+    }
+
+    const checkDni = await db.query('SELECT id FROM choferes WHERE dni = $1', [dni]);
+    if (checkDni.rows.length > 0) {
+      return res.status(400).json({ error: 'El DNI ya está registrado' });
+    }
+
+    const checkPlaca = await db.query('SELECT id FROM choferes WHERE placa_vehiculo = $1', [placa_vehiculo]);
+    if (checkPlaca.rows.length > 0) {
+      return res.status(400).json({ error: 'La placa del vehículo ya está registrada' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     
     // Crear usuario primero
     const usuarioResult = await db.query(
-      `INSERT INTO usuarios (nombre, email, rol, estado)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO usuarios (nombre, email, password_hash, rol, estado)
+       VALUES ($1, $2, $3, 'chofer', 'activo')
        RETURNING id`,
-      [nombre, email, 'chofer', 'activo']
+      [nombre, email.toLowerCase(), hashedPassword]
     );
     
     const usuarioId = usuarioResult.rows[0].id;
     
-    // Crear chofer
+    // Crear chofer (autorizado directamente por el admin)
     const choferResult = await db.query(
       `INSERT INTO choferes (
-        usuario_id, dni, telefono, placa_vehiculo, ruta_id, foto_url
-      ) VALUES ($1, $2, $3, $4, $5, $6)
+        usuario_id, dni, telefono, placa_vehiculo, ruta_id, foto_url, estado_autorizacion, autorizado_por, fecha_autorizacion
+      ) VALUES ($1, $2, $3, $4, $5, $6, 'activo', $7, CURRENT_TIMESTAMP)
       RETURNING id`,
-      [usuarioId, dni, telefono, placa_vehiculo, ruta_id, foto_url]
+      [usuarioId, dni, telefono, placa_vehiculo, ruta_id || null, foto_url || null, creado_por || null]
     );
     
     res.status(201).json({ id: choferResult.rows[0].id });
   } catch (error: any) {
+    console.error('Error al crear chofer:', error);
     res.status(500).json({ error: error.message });
   }
 });
