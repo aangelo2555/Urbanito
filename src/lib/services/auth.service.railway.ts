@@ -4,12 +4,7 @@
 
 import { auth } from '@/lib/firebase/config';
 // @ts-ignore
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-} from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { apiClient } from '@/lib/api/client';
 import { Usuario, LoginDTO, RegistroAlumnoDTO } from '@/types';
 
