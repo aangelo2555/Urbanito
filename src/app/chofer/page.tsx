@@ -25,10 +25,17 @@ export default function ChoferPage() {
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
 
-  // Cargar info del chofer
+  // Cargar info del chofer y sincronizar viaje activo desde la BD
   useEffect(() => {
     if (usuario) {
-      ChoferService.obtenerChofer(usuario.id).then(setChofer);
+      ChoferService.obtenerChofer(usuario.id).then((c) => {
+        setChofer(c);
+        ViajeService.obtenerViajeActivoDelChofer(usuario.id).then((viajeActivo) => {
+          if (viajeActivo) {
+            setViaje(viajeActivo);
+          }
+        });
+      });
     }
   }, [usuario]);
 

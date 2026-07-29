@@ -42,6 +42,18 @@ export default function AlumnoPage() {
     cargarRuta();
   }, []);
 
+  // Sincronizar estado de "Estoy esperando" activo desde el backend
+  useEffect(() => {
+    if (usuario) {
+      UbicacionEsperaService.obtenerUbicacionActivaAlumno(usuario.id).then((ubicacionActiva) => {
+        if (ubicacionActiva && ubicacionActiva.activo) {
+          setEsperando(true);
+          setUbicacionEsperaId(ubicacionActiva.id);
+        }
+      });
+    }
+  }, [usuario]);
+
   // Observar ubicaciones en tiempo real
   useEffect(() => {
     const unsubscribe = ViajeService.observarTodasLasUbicaciones(
