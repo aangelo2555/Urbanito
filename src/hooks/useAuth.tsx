@@ -41,9 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const user = await AuthService.login(credentials);
       setUsuario(user);
-    } catch (error) {
+      if (user) {
+        wsClient.connect(user.id, user.rol);
+      }
+    } finally {
       setLoading(false);
-      throw error;
     }
   };
 
@@ -65,9 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user) {
         wsClient.connect(user.id, user.rol);
       }
-    } catch (error) {
+    } finally {
       setLoading(false);
-      throw error;
     }
   };
 
