@@ -3,7 +3,15 @@
  * Reemplaza las llamadas directas a Firebase
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+function getApiUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://backend11.up.railway.app';
+  }
+  return 'http://localhost:4000';
+}
 
 interface RequestOptions {
   method?: string;
@@ -32,7 +40,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     config.body = JSON.stringify(body);
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, config);
+  const response = await fetch(`${getApiUrl()}${endpoint}`, config);
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Error desconocido' }));

@@ -3,10 +3,15 @@
  * Reemplaza Firebase Realtime Database
  */
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 
-  (typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? 'ws://localhost:4000'
-    : 'wss://your-backend.up.railway.app');
+function getWsUrl(): string {
+  if (process.env.NEXT_PUBLIC_WS_URL) {
+    return process.env.NEXT_PUBLIC_WS_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'wss://backend11.up.railway.app';
+  }
+  return 'ws://localhost:4000';
+}
 
 type MessageHandler = (data: any) => void;
 
@@ -22,7 +27,7 @@ class WebSocketClient {
       return;
     }
 
-    this.ws = new WebSocket(WS_URL);
+    this.ws = new WebSocket(getWsUrl());
 
     this.ws.onopen = () => {
       console.log('WebSocket connected');
