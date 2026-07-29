@@ -17,12 +17,13 @@ export class AuthService {
    * Registrar un nuevo alumno
    */
   static async registrarAlumno(data: RegistroAlumnoDTO): Promise<void> {
-    if (!auth) {
+    const firebaseAuth = auth;
+    if (!firebaseAuth) {
       throw new Error('Firebase Auth no está configurado. Por favor configura las credenciales de Firebase.');
     }
     // 1. Crear usuario en Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(
-      auth,
+      firebaseAuth,
       data.email,
       data.password
     );
@@ -55,7 +56,8 @@ export class AuthService {
    * Iniciar sesión
    */
   static async login(credentials: LoginDTO): Promise<Usuario> {
-    if (!auth) {
+    const firebaseAuth = auth;
+    if (!firebaseAuth) {
       throw new Error('Firebase Auth no está configurado. Por favor configura las credenciales de Firebase.');
     }
     // 1. Autenticar con Firebase
@@ -71,7 +73,7 @@ export class AuthService {
     }
 
     const userCredential = await signInWithEmailAndPassword(
-      auth,
+      firebaseAuth,
       email,
       credentials.password
     );
@@ -95,8 +97,9 @@ export class AuthService {
    * Cerrar sesión
    */
   static async logout(): Promise<void> {
-    if (auth) {
-      await firebaseSignOut(auth);
+    const firebaseAuth = auth;
+    if (firebaseAuth) {
+      await firebaseSignOut(firebaseAuth);
     }
     if (typeof window !== 'undefined') {
       localStorage.removeItem('authToken');
@@ -107,9 +110,10 @@ export class AuthService {
    * Obtener usuario actual
    */
   static async obtenerUsuarioActual(): Promise<Usuario | null> {
-    if (!auth) return null;
+    const firebaseAuth = auth;
+    if (!firebaseAuth) return null;
     return new Promise((resolve) => {
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
         unsubscribe();
         
         if (firebaseUser) {
@@ -140,11 +144,12 @@ export class AuthService {
    * Observar cambios en la autenticación
    */
   static onAuthChange(callback: (usuario: Usuario | null) => void): () => void {
-    if (!auth) {
+    const firebaseAuth = auth;
+    if (!firebaseAuth) {
       callback(null);
       return () => {};
     }
-    return onAuthStateChanged(auth, async (firebaseUser) => {
+    return onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
           const idToken = await firebaseUser.getIdToken();
