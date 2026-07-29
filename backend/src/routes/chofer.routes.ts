@@ -32,7 +32,7 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// Obtener chofer por ID
+// Obtener chofer por ID (acepta choferes.id o usuarios.id)
 router.get('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -41,7 +41,7 @@ router.get('/:id', requireAuth, async (req, res) => {
       `SELECT c.*, u.nombre, u.email
        FROM choferes c
        JOIN usuarios u ON c.usuario_id = u.id
-       WHERE c.id = $1`,
+       WHERE c.id = $1 OR c.usuario_id = $1`,
       [id]
     );
     
@@ -129,7 +129,7 @@ router.put('/:id/estado', requireAdmin, async (req, res) => {
        SET estado_autorizacion = $1,
            autorizado_por = $2,
            fecha_autorizacion = CURRENT_TIMESTAMP
-       WHERE id = $3`,
+       WHERE id = $3 OR usuario_id = $3`,
       [nuevo_estado, autorizado_por, id]
     );
     

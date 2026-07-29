@@ -96,7 +96,7 @@ export default function ChoferesPage() {
         {
           nombre: formData.nombre,
           email: formData.email,
-          password: formData.password || 'chofer123',
+          password: formData.password.trim() || `Urb#2026!${Math.floor(1000 + Math.random() * 9000)}`,
           dni: formData.dni,
           telefono: formData.telefono,
           placa_vehiculo: formData.placa_vehiculo,
@@ -317,12 +317,13 @@ export default function ChoferesPage() {
                   required
                 />
                 <Input
-                  label="Contraseña"
+                  label="Contraseña del Chofer"
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Por defecto: chofer123"
-                  helperText="Opcional (defecto: chofer123)"
+                  placeholder="Ej. MiClaveSegura#2026"
+                  helperText="Opcional (se creará una clave segura automáticamente)"
+                  autoComplete="new-password"
                 />
               </div>
 

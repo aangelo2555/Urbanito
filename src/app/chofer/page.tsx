@@ -34,8 +34,13 @@ export default function ChoferPage() {
 
   // Cargar ruta
   useEffect(() => {
-    if (chofer) {
-      RutaService.obtenerRuta(chofer.ruta_id).then(setRuta);
+    if (chofer && chofer.ruta_id) {
+      RutaService.obtenerRuta(chofer.ruta_id).then((r) => {
+        if (r) setRuta(r);
+        else RutaService.obtenerRutasActivas().then((rutas) => setRuta(rutas[0] || null));
+      });
+    } else {
+      RutaService.obtenerRutasActivas().then((rutas) => setRuta(rutas[0] || null));
     }
   }, [chofer]);
 
@@ -84,20 +89,27 @@ export default function ChoferPage() {
   );
 
   const iniciarViaje = async () => {
-    if (!usuario || !chofer || !ruta) return;
+    if (!usuario) return;
 
     try {
-      // Verificar autorización
-      const autorizado = await ChoferService.estaAutorizadoParaTransmitir(usuario.id);
-      if (!autorizado) {
-        setError('No estás autorizado para iniciar viajes. Contacta al administrador.');
+      let targetRuta = ruta;
+      if (!targetRuta) {
+        const rutas = await RutaService.obtenerRutasActivas();
+        if (rutas.length > 0) {
+          targetRuta = rutas[0];
+          setRuta(targetRuta);
+        }
+      }
+
+      if (!targetRuta) {
+        setError('No hay rutas disponibles para iniciar el viaje.');
         return;
       }
 
-      const viajeId = await ViajeService.iniciarViaje(usuario.id, ruta.id);
+      const viajeId = await ViajeService.iniciarViaje(usuario.id, targetRuta.id);
       const nuevoViaje = await ViajeService.obtenerViaje(viajeId);
       setViaje(nuevoViaje);
-      setMensaje('Viaje iniciado. Tu ubicación está siendo compartida.');
+      setMensaje('¡Viaje iniciado! Tu ubicación está siendo compartida en tiempo real.');
       setError('');
     } catch (err: any) {
       setError(err.message || 'Error al iniciar viaje');
