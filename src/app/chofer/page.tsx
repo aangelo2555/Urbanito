@@ -208,24 +208,34 @@ export default function ChoferPage() {
             <Alert type="error" message={error} onClose={() => setError('')} />
           )}
 
-          <div className="mt-3 flex items-center justify-between gap-4">
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-gray-600">
-                {viaje ? 'Viaje en curso' : 'Sin viaje activo'}
+              <p className="text-sm font-semibold text-gray-700">
+                {viaje ? '🚀 Viaje en curso' : '⏹️ Sin viaje activo'}
               </p>
               {chofer && (
                 <p className="text-xs text-gray-500">
-                  Placa: {chofer.placa_vehiculo}
+                  Vehículo Placa: <span className="font-bold text-gray-800">{chofer.placa_vehiculo}</span>
                 </p>
               )}
             </div>
 
             {!viaje ? (
-              <Button variant="success" size="lg" onClick={iniciarViaje}>
+              <Button
+                variant="success"
+                size="lg"
+                onClick={iniciarViaje}
+                className="w-full sm:w-auto py-3 px-6 text-base font-bold rounded-xl shadow-md transition-transform active:scale-95"
+              >
                 Iniciar Viaje
               </Button>
             ) : (
-              <Button variant="danger" size="lg" onClick={finalizarViaje}>
+              <Button
+                variant="danger"
+                size="lg"
+                onClick={finalizarViaje}
+                className="w-full sm:w-auto py-3 px-6 text-base font-bold rounded-xl shadow-md transition-transform active:scale-95"
+              >
                 Finalizar Viaje
               </Button>
             )}
