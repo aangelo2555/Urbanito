@@ -60,12 +60,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const registrarAlumno = async (data: RegistroAlumnoDTO) => {
     setLoading(true);
     try {
-      await AuthService.registrarAlumno(data);
-      // Después del registro, iniciar sesión automáticamente
-      await login({
-        email_o_codigo: data.email,
-        password: data.password,
-      });
+      const user = await AuthService.registrarAlumno(data);
+      setUsuario(user);
+      if (user) {
+        wsClient.connect(user.id, user.rol);
+      }
     } catch (error) {
       setLoading(false);
       throw error;

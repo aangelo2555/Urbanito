@@ -25,7 +25,7 @@ export default function LoginPage() {
 
     try {
       await login(formData);
-      // La redirección se maneja en el layout principal
+      router.push('/');
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');
     } finally {

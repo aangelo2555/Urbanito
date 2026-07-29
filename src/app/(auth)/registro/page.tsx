@@ -21,6 +21,7 @@ export default function RegistroPage() {
     confirmarPassword: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
   const validateForm = (): boolean => {
@@ -59,6 +60,7 @@ export default function RegistroPage() {
 
     setLoading(true);
     setErrors({});
+    setSuccessMsg('');
 
     try {
       await registrarAlumno({
@@ -68,10 +70,12 @@ export default function RegistroPage() {
         telefono: formData.telefono || undefined,
         password: formData.password,
       });
-      // La redirección se maneja automáticamente después del login
+      setSuccessMsg('¡Cuenta creada exitosamente! Redirigiendo al sistema...');
+      setTimeout(() => {
+        router.push('/alumno');
+      }, 1500);
     } catch (err: any) {
       setErrors({ general: err.message || 'Error al registrar' });
-    } finally {
       setLoading(false);
     }
   };
@@ -83,6 +87,15 @@ export default function RegistroPage() {
           <h1 className="text-3xl font-bold text-gray-900">Crear Cuenta</h1>
           <p className="text-gray-600 mt-2">Registro de Estudiantes UNAB</p>
         </div>
+
+        {successMsg && (
+          <div className="mb-4">
+            <Alert
+              type="success"
+              message={successMsg}
+            />
+          </div>
+        )}
 
         {errors.general && (
           <div className="mb-4">
